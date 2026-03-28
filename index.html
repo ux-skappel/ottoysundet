@@ -294,12 +294,19 @@ function renderTideChart(canvas, tideData, hourlyScores) {
     ctx.fillRect(x1, barY, x2 - x1, barH);
   });
 
-  // Subtil bakgrunn for gode vinduer i sjølve grafområdet (beholdt, men lågare alpha)
+  // Tydeleg bakgrunnsfyll i grafområdet basert på fiskekvalitet
   scoreSorted.forEach(([k, v]) => {
     const ms = new Date(k).getTime();
     const x1 = toXms(ms), x2 = toXms(ms + 3600000);
-    ctx.fillStyle = `rgba(201,168,76,${(v.total / 100) * 0.10})`;
-    ctx.fillRect(x1, pad.t, x2 - x1, ch);
+    let color, alpha;
+    if      (v.total >= 75) { color = '76,175,130';  alpha = 0.28; }  // grøn — utmerket
+    else if (v.total >= 55) { color = '201,168,76';  alpha = 0.18; }  // gull — bra
+    else if (v.total >= 35) { color = '74,158,202';  alpha = 0.07; }  // blå — greit (nesten usynleg)
+    else                    { color = null; }                          // dårleg — ingen fyll
+    if (color) {
+      ctx.fillStyle = `rgba(${color},${alpha})`;
+      ctx.fillRect(x1, pad.t, x2 - x1, ch);
+    }
   });
 
   // ── Horisontale gridlinjer + Y-akse
