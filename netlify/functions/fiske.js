@@ -3,23 +3,56 @@
 const LAT = 59.485;
 const LON = 6.245;
 
+// -------------------------------------------------------------------
+// Harmonisk tidevannsberegning for Stavanger (nærmeste hovudstasjon)
+// Konstanter frå Kartverket / IHO-datablad for Stavanger
+// -------------------------------------------------------------------
+const TIDE_CONSTITUENTS = [
+  { name: 'M2',  amp: 0.295, speed: 28.9841042, phase: 78.0  },
+  { name: 'S2',  amp: 0.091, speed: 30.0000000, phase: 102.0 },
+  { name: 'N2',  amp: 0.055, speed: 28.4397295, phase: 55.0  },
+  { name: 'K2',  amp: 0.025, speed: 30.0821373, phase: 108.0 },
+  { name: 'K1',  amp: 0.038, speed: 15.0410686, phase: 210.0 },
+  { name: 'O1',  amp: 0.020, speed: 13.9430356, phase: 195.0 },
+  { name: 'P1',  amp: 0.012, speed: 14.9589314, phase: 208.0 },
+  { name: 'Q1',  amp: 0.006, speed: 13.3986609, phase: 180.0 },
+  { name: 'M4',  amp: 0.012, speed: 57.9682084, phase: 160.0 },
+];
+const TIDE_MEAN = 0.72; // middelvannstand over CD (cm → m, Stavanger ~72cm)
+
+function calcTideHeight(dateMs) {
+  const t = (dateMs - Date.UTC(1900, 0, 1)) / 3600000; // timar sidan 1900-01-01
+  return TIDE_MEAN + TIDE_CONSTITUENTS.reduce((sum, c) => {
+    const rad = (c.speed * t - c.phase) * Math.PI / 180;
+    return sum + c.amp * Math.cos(rad);
+  }, 0);
+}
+
+function buildTideData(fromMs, hoursCount) {
+  const entries = [];
+  for (let i = 0; i <= hoursCount; i++) {
+    const ms = fromMs + i * 3600000;
+    entries.push({ time: new Date(ms).toISOString(), value: calcTideHeight(ms) * 100, flag: '' });
+  }
+  // Finn lokale minimum/maksimum og merk dei
+  for (let i = 1; i < entries.length - 1; i++) {
+    const prev = entries[i - 1].value;
+    const cur  = entries[i].value;
+    const next = entries[i + 1].value;
+    if (cur > prev && cur > next) entries[i].flag = 'high';
+    else if (cur < prev && cur < next) entries[i].flag = 'low';
+  }
+  return entries;
+}
+
 export default async (req) => {
   try {
     const now = new Date();
     const fromTime = new Date(now);
     fromTime.setHours(0, 0, 0, 0);
-    const toTime = new Date(fromTime);
-    toTime.setDate(toTime.getDate() + 8);
 
-    const fmt = (d) => d.toISOString().slice(0, 16);
-
-    // --- Tidevann: Kartverket ---
-    const tideUrl =
-      `https://api.sehavniva.no/tideapi.php` +
-      `?lat=${LAT}&lon=${LON}` +
-      `&fromtime=${fmt(fromTime)}&totime=${fmt(toTime)}` +
-      `&datatype=TAB&refcode=CD&interval=60` +
-      `&lang=nn&dst=1&tzone=UTC&tide_request=locationdata`;
+    // --- Tidevann: harmonisk beregning (ingen ekstern API) ---
+    const tideData = buildTideData(fromTime.getTime(), 8 * 24);
 
     // --- Vær: Open-Meteo ---
     const weatherUrl =
@@ -29,20 +62,9 @@ export default async (req) => {
       `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode,windspeed_10m_max` +
       `&timezone=Europe%2FOslo&forecast_days=8`;
 
-    const [tideRes, weatherRes] = await Promise.all([
-      fetch(tideUrl).catch(e => ({ ok: false, text: async () => '', _err: e.message })),
-      fetch(weatherUrl),
-    ]);
-
+    const weatherRes = await fetch(weatherUrl);
     if (!weatherRes.ok) throw new Error(`Open-Meteo ${weatherRes.status}`);
     const weather = await weatherRes.json();
-
-    // Parse tidevann-XML (graceful fallback hvis Kartverket feiler)
-    let tideData = [];
-    if (tideRes.ok) {
-      const tideXml = await tideRes.text();
-      tideData = parseTideXml(tideXml);
-    }
 
     // Beregn fiskeindeks per time
     const hourlyScores = calcHourlyScores(weather, tideData, now);
@@ -93,20 +115,6 @@ export default async (req) => {
     );
   }
 };
-
-function parseTideXml(xml) {
-  const entries = [];
-  const regex = /<waterlevel[^>]*time="([^"]+)"[^>]*value="([^"]+)"[^>]*flag="([^"]*)"[^>]*/g;
-  let m;
-  while ((m = regex.exec(xml)) !== null) {
-    entries.push({
-      time: m[1],
-      value: parseFloat(m[2]),
-      flag: m[3], // "high" | "low" | ""
-    });
-  }
-  return entries;
-}
 
 function calcHourlyScores(weather, tideData, now) {
   const scores = {};
