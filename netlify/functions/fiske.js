@@ -19,7 +19,7 @@ export default async (req) => {
       `?lat=${LAT}&lon=${LON}` +
       `&fromtime=${fmt(fromTime)}&totime=${fmt(toTime)}` +
       `&datatype=TAB&refcode=CD&interval=60` +
-      `&lang=nn&dst=1&tzone=1&tide_request=locationdata`;
+      `&lang=nn&dst=1&tzone=UTC&tide_request=locationdata`;
 
     // --- Vær: Open-Meteo ---
     const weatherUrl =
@@ -30,16 +30,19 @@ export default async (req) => {
       `&timezone=Europe%2FOslo&forecast_days=8`;
 
     const [tideRes, weatherRes] = await Promise.all([
-      fetch(tideUrl),
+      fetch(tideUrl).catch(e => ({ ok: false, text: async () => '', _err: e.message })),
       fetch(weatherUrl),
     ]);
 
     if (!weatherRes.ok) throw new Error(`Open-Meteo ${weatherRes.status}`);
     const weather = await weatherRes.json();
 
-    // Parse tidevann-XML
-    const tideXml = await tideRes.text();
-    const tideData = parseTideXml(tideXml);
+    // Parse tidevann-XML (graceful fallback hvis Kartverket feiler)
+    let tideData = [];
+    if (tideRes.ok) {
+      const tideXml = await tideRes.text();
+      tideData = parseTideXml(tideXml);
+    }
 
     // Beregn fiskeindeks per time
     const hourlyScores = calcHourlyScores(weather, tideData, now);
