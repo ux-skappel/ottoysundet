@@ -494,13 +494,17 @@ async function load() {
     `;
 
     // Tegn tidevannskart
-    const canvas = document.getElementById('tideCanvas');
-    if (canvas) {
-      canvas.width = canvas.offsetWidth * devicePixelRatio;
-      canvas.height = 160 * devicePixelRatio;
-      canvas.style.height = '160px';
-      renderTideChart(canvas, data.tideData, data.hourlyScores);
-    }
+    requestAnimationFrame(() => {
+      const canvas = document.getElementById('tideCanvas');
+      if (canvas) {
+        const w = canvas.offsetWidth || 440;
+        canvas.width = w * devicePixelRatio;
+        canvas.height = 160 * devicePixelRatio;
+        canvas.style.width = '100%';
+        canvas.style.height = '160px';
+        renderTideChart(canvas, data.tideData, data.hourlyScores);
+      }
+    });
 
   } catch (err) {
     app.innerHTML = `<div class="error-msg">Kunne ikke hente data: ${err.message}</div>`;
