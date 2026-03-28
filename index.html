@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sjøfiskevarsel – Ottøysundet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a1628;
+    --surface:  #112240;
+    --surface2: #1a3256;
+    --gold:     #c9a84c;
+    --gold2:    #e8c97a;
+    --blue:     #4a9eca;
+    --blue2:    #6dbde8;
+    --green:    #4caf82;
+    --red:      #e05252;
+    --text:     #e8f0f8;
+    --muted:    #7a95b0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    background: linear-gradient(180deg, #061022 0%, var(--bg) 100%);
+    border-bottom: 1px solid rgba(74,158,202,0.15);
+  }
+  .icon { font-size: 2.8rem; margin-bottom: 0.5rem; }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.3rem, 4vw, 2rem);
+    font-weight: 700;
+    color: var(--blue2);
+    margin-top: 0.1rem;
+  }
+  .location {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+  }
+  .updated {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  /* MAIN */
+  main { max-width: 480px; margin: 0 auto; padding: 1.2rem 1rem 3rem; }
+
+  /* SCORE CARD */
+  .score-card {
+    background: var(--surface);
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(74,158,202,0.15);
+  }
+  .score-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+  .score-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.2rem;
+  }
+  .score-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--gold);
+  }
+  .score-info { flex: 1; }
+  .score-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .score-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    line-height: 1.4;
+  }
+  .score-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    margin-top: 1rem;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+  }
+
+  /* WEATHER ROW */
+  .weather-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .weather-chip {
+    background: var(--surface);
+    border-radius: 0.9rem;
+    padding: 0.8rem 0.5rem;
+    text-align: center;
+    border: 1px solid rgba(74,158,202,0.1);
+  }
+  .weather-chip .wc-icon { font-size: 1.4rem; }
+  .weather-chip .wc-val {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 0.2rem;
+  }
+  .weather-chip .wc-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.1rem;
+  }
+
+  /* TIDE + SCORE CHART */
+  .card {
+    background: var(--surface);
+    border-radius: 1.2rem;
+    padding: 1.2rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(74,158,202,0.15);
+  }
+  .card-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+  canvas { width: 100%; border-radius: 0.5rem; }
+
+  /* BEST TIMES */
+  .best-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .best-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--surface2);
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.9rem;
+  }
+  .best-time {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--blue2);
+    min-width: 2.5rem;
+  }
+  .best-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .best-bar { height: 100%; border-radius: 3px; }
+  .best-score-num { font-size: 0.85rem; font-weight: 600; color: var(--gold); min-width: 2rem; text-align: right; }
+
+  /* 7 DAGER */
+  .day-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .day-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: var(--surface2);
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.9rem;
+  }
+  .day-name { font-size: 0.85rem; font-weight: 500; min-width: 2.8rem; color: var(--text); }
+  .day-icon { font-size: 1.1rem; }
+  .day-temp { font-size: 0.8rem; color: var(--muted); min-width: 4rem; }
+  .day-wind { font-size: 0.8rem; color: var(--muted); flex: 1; }
+  .day-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    letter-spacing: 0.04em;
+  }
+  .day-best-time { font-size: 0.75rem; color: var(--blue2); min-width: 3rem; text-align: right; }
+
+  /* SCORE COLORS */
+  .score-excellent { color: var(--green); }
+  .score-good { color: var(--gold); }
+  .score-ok { color: var(--blue); }
+  .score-poor { color: var(--red); }
+  .badge-excellent { background: rgba(76,175,130,0.2); color: var(--green); }
+  .badge-good { background: rgba(201,168,76,0.2); color: var(--gold); }
+  .badge-ok { background: rgba(74,158,202,0.2); color: var(--blue); }
+  .badge-poor { background: rgba(224,82,82,0.15); color: var(--red); }
+
+  .loading { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 0.9rem; }
+  .error-msg { background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.3); border-radius: 0.8rem; padding: 1rem; color: var(--red); text-align: center; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="icon">⚓</div>
+  <h1>Sjøfiskevarsel</h1>
+  <h2>Ottøysundet</h2>
+  <div class="location">Sandsfjorden · Ryfylke · Rogaland</div>
+  <div class="updated" id="updated">Laster data…</div>
+</header>
+
+<main>
+  <div id="app">
+    <div class="loading">Henter tidevann og vær…</div>
+  </div>
+</main>
+
+<script>
+const API = '/api/fiske';
+
+function scoreClass(s) {
+  return s >= 75 ? 'excellent' : s >= 55 ? 'good' : s >= 35 ? 'ok' : 'poor';
+}
+function scoreLabel(s) {
+  return s >= 75 ? 'Utmerket' : s >= 55 ? 'Bra' : s >= 35 ? 'Greit' : 'Dårlig';
+}
+function scoreDesc(s) {
+  return s >= 75
+    ? 'Gode fiskeforhold. Tidevann, vind og tid stemmer.'
+    : s >= 55
+    ? 'Ok forhold. Noen faktorer taler for fiske nå.'
+    : s >= 35
+    ? 'Middels. Prøv tidlig morgen eller kveld.'
+    : 'Lite gunstig akkurat nå. Sjekk morgendagen.';
+}
+
+function weatherIcon(wcode) {
+  if (wcode === 0) return '☀️';
+  if (wcode <= 2) return '🌤️';
+  if (wcode <= 3) return '☁️';
+  if (wcode <= 49) return '🌫️';
+  if (wcode <= 59) return '🌦️';
+  if (wcode <= 69) return '🌧️';
+  if (wcode <= 79) return '🌨️';
+  if (wcode <= 82) return '⛈️';
+  return '🌩️';
+}
+
+function windIcon(speed) {
+  if (speed <= 3) return '🌊';
+  if (speed <= 8) return '💨';
+  return '🌬️';
+}
+
+function dayName(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('no-NO', { weekday: 'short' });
+}
+
+function renderTideChart(canvas, tideData, hourlyScores) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (!tideData.length) return;
+
+  // Filtrer dagens data (første 24 timer)
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 2);
+
+  const pts = tideData.filter(t => {
+    const d = new Date(t.time);
+    return d >= today && d < tomorrow;
+  });
+
+  if (pts.length < 2) return;
+
+  const vals = pts.map(p => p.value);
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const range = maxV - minV || 1;
+
+  const pad = { t: 20, b: 30, l: 10, r: 10 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+
+  const toX = (i) => pad.l + (i / (pts.length - 1)) * cw;
+  const toY = (v) => pad.t + ch - ((v - minV) / range) * ch;
+
+  // Fiskeindeks som bakgrunnsfarge per time
+  const scores = Object.entries(hourlyScores)
+    .filter(([k]) => {
+      const d = new Date(k);
+      return d >= today && d < tomorrow;
+    })
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+  scores.forEach(([, v], i) => {
+    const x1 = pad.l + (i / scores.length) * cw;
+    const x2 = pad.l + ((i + 1) / scores.length) * cw;
+    const alpha = (v.total / 100) * 0.18;
+    ctx.fillStyle = `rgba(201,168,76,${alpha})`;
+    ctx.fillRect(x1, pad.t, x2 - x1, ch);
+  });
+
+  // Tidepunkts-kurve
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(pts[0].value));
+  for (let i = 1; i < pts.length; i++) {
+    const cx1 = (toX(i - 1) + toX(i)) / 2;
+    ctx.bezierCurveTo(cx1, toY(pts[i-1].value), cx1, toY(pts[i].value), toX(i), toY(pts[i].value));
+  }
+  ctx.strokeStyle = 'rgba(74,158,202,0.8)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Fyll under kurven
+  ctx.lineTo(toX(pts.length - 1), H - pad.b);
+  ctx.lineTo(toX(0), H - pad.b);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+  grad.addColorStop(0, 'rgba(74,158,202,0.25)');
+  grad.addColorStop(1, 'rgba(74,158,202,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Merk høyvann/lavvann
+  pts.forEach((p, i) => {
+    if (p.flag === 'high' || p.flag === 'low') {
+      const x = toX(i), y = toY(p.value);
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = p.flag === 'high' ? '#4caf82' : '#e05252';
+      ctx.fill();
+
+      ctx.fillStyle = '#e8f0f8';
+      ctx.font = '10px DM Sans';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        (p.flag === 'high' ? '▲' : '▼') + ' ' + p.value.toFixed(0) + 'cm',
+        x, p.flag === 'high' ? y - 10 : y + 18
+      );
+    }
+  });
+
+  // Tidsakser (kl 00, 06, 12, 18)
+  [0, 6, 12, 18].forEach(h => {
+    const frac = h / 48;
+    const x = pad.l + frac * cw;
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, pad.t);
+    ctx.lineTo(x, H - pad.b + 5);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(122,149,176,0.8)';
+    ctx.font = '10px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${String(h).padStart(2,'0')}:00`, x, H - pad.b + 18);
+  });
+}
+
+async function load() {
+  const app = document.getElementById('app');
+  try {
+    const data = await fetch(API).then(r => r.json());
+
+    if (!data.ok) throw new Error(data.error);
+
+    const now = new Date();
+    document.getElementById('updated').textContent =
+      'Sist oppdatert: ' + now.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+
+    const cs = data.currentScore?.total ?? 0;
+    const sc = scoreClass(cs);
+    const w = data.weather;
+
+    // Beste timer i dag (topp 4)
+    const todayStr = now.toISOString().slice(0, 10);
+    const todayScores = Object.entries(data.hourlyScores)
+      .filter(([k]) => k.startsWith(todayStr) && parseInt(k.slice(11, 13)) >= now.getHours())
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 5);
+
+    app.innerHTML = `
+      <!-- FISKEINDEKS -->
+      <div class="score-card">
+        <div class="score-label">Fiskeindeks akkurat nå</div>
+        <div class="score-row">
+          <div class="score-number score-${sc}">${cs}</div>
+          <div class="score-info">
+            <div class="score-title">${scoreLabel(cs)}</div>
+            <div class="score-desc">${scoreDesc(cs)}</div>
+          </div>
+        </div>
+        <div class="score-bar">
+          <div class="score-fill" style="width:${cs}%"></div>
+        </div>
+      </div>
+
+      <!-- VÆR -->
+      <div class="weather-row">
+        <div class="weather-chip">
+          <div class="wc-icon">${weatherIcon(w.wcode)}</div>
+          <div class="wc-val">${w.temp !== null ? Math.round(w.temp) + '°' : '–'}</div>
+          <div class="wc-label">Temp</div>
+        </div>
+        <div class="weather-chip">
+          <div class="wc-icon">${windIcon(w.wind)}</div>
+          <div class="wc-val">${w.wind !== null ? Math.round(w.wind) : '–'} m/s</div>
+          <div class="wc-label">Vind</div>
+        </div>
+        <div class="weather-chip">
+          <div class="wc-icon">🌧️</div>
+          <div class="wc-val">${w.rain !== null ? w.rain.toFixed(1) : '–'} mm</div>
+          <div class="wc-label">Nedbør</div>
+        </div>
+        <div class="weather-chip">
+          <div class="wc-icon">🌊</div>
+          <div class="wc-val">${data.tideData?.find(t => t.flag === 'high' || t.flag === 'low')?.flag === 'high' ? 'HV' : 'LV'}</div>
+          <div class="wc-label">Tidevann</div>
+        </div>
+      </div>
+
+      <!-- TIDEVANNSKART -->
+      <div class="card">
+        <div class="card-title">Tidevann neste 48 timer</div>
+        <canvas id="tideCanvas" width="440" height="160"></canvas>
+      </div>
+
+      <!-- BESTE TIDER I DAG -->
+      <div class="card">
+        <div class="card-title">Beste fisketider i dag</div>
+        <div class="best-list">
+          ${todayScores.map(([k, v]) => {
+            const h = parseInt(k.slice(11, 13));
+            const sc2 = scoreClass(v.total);
+            return `<div class="best-item">
+              <div class="best-time">kl. ${String(h).padStart(2,'0')}</div>
+              <div class="best-bar-wrap">
+                <div class="best-bar" style="width:${v.total}%;background:${v.total>=75?'#4caf82':v.total>=55?'#c9a84c':'#4a9eca'}"></div>
+              </div>
+              <div class="best-score-num score-${sc2}">${v.total}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 7 DAGER -->
+      <div class="card">
+        <div class="card-title">7-dagers oversikt</div>
+        <div class="day-list">
+          ${data.daily.slice(0, 7).map(d => {
+            const bs = d.bestScore ?? 0;
+            const sc3 = scoreClass(bs);
+            return `<div class="day-item">
+              <div class="day-name">${dayName(d.date)}</div>
+              <div class="day-icon">${weatherIcon(d.wcode)}</div>
+              <div class="day-temp">${d.tempMax !== null ? Math.round(d.tempMax) + '°/' + Math.round(d.tempMin) + '°' : '–'}</div>
+              <div class="day-wind">${d.windMax !== null ? Math.round(d.windMax) + ' m/s' : ''}</div>
+              <div class="day-badge badge-${sc3}">${scoreLabel(bs)}</div>
+              <div class="day-best-time">${d.bestHour !== null ? 'kl. ' + String(d.bestHour).padStart(2,'0') : ''}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    // Tegn tidevannskart
+    const canvas = document.getElementById('tideCanvas');
+    if (canvas) {
+      canvas.width = canvas.offsetWidth * devicePixelRatio;
+      canvas.height = 160 * devicePixelRatio;
+      canvas.style.height = '160px';
+      renderTideChart(canvas, data.tideData, data.hourlyScores);
+    }
+
+  } catch (err) {
+    app.innerHTML = `<div class="error-msg">Kunne ikke hente data: ${err.message}</div>`;
+  }
+}
+
+load();
+setInterval(load, 30 * 60 * 1000);
+</script>
+</body>
+</html>
