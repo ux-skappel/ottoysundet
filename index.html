@@ -266,7 +266,8 @@ function renderTideChart(canvas, tideData, hourlyScores) {
   const maxV  = Math.max(...vals) + 8;
   const range = maxV - minV;
 
-  const pad   = { t: 20, b: 40, l: 36, r: 10 };
+  const BAR_H = 8; // høgde på fiskekvalitets-bar i px (CSS-px, skalert med dpr under)
+  const pad   = { t: 20 + BAR_H + 4, b: 40, l: 36, r: 10 };
   const cw    = W - pad.l - pad.r;
   const ch    = H - pad.t - pad.b;
 
@@ -275,16 +276,31 @@ function renderTideChart(canvas, tideData, hourlyScores) {
   const toY   = v   => pad.t + ch - ((v - minV) / range) * ch;
   const fs    = n   => `${n * dpr}px DM Sans`;
 
-  // ── Fiskescore-bakgrunn per time
-  Object.entries(hourlyScores)
+  // ── Fiskekvalitets-bar øvst i grafen (tydeleg fargekoding per time)
+  const scoreSorted = Object.entries(hourlyScores)
     .filter(([k]) => { const ms = new Date(k).getTime(); return ms >= startMs && ms < endMs; })
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .forEach(([k, v]) => {
-      const ms = new Date(k).getTime();
-      const x1 = toXms(ms), x2 = toXms(ms + 3600000);
-      ctx.fillStyle = `rgba(201,168,76,${(v.total / 100) * 0.22})`;
-      ctx.fillRect(x1, pad.t, x2 - x1, ch);
-    });
+    .sort((a, b) => a[0].localeCompare(b[0]));
+
+  scoreSorted.forEach(([k, v]) => {
+    const ms = new Date(k).getTime();
+    const x1 = toXms(ms), x2 = toXms(ms + 3600000);
+    const barY = 20 * dpr; // under "NÅ"-labelen
+    const barH = BAR_H * dpr;
+    const color = v.total >= 75 ? '76,175,130'
+                : v.total >= 55 ? '201,168,76'
+                : v.total >= 35 ? '74,158,202'
+                : '224,82,82';
+    ctx.fillStyle = `rgba(${color},0.85)`;
+    ctx.fillRect(x1, barY, x2 - x1, barH);
+  });
+
+  // Subtil bakgrunn for gode vinduer i sjølve grafområdet (beholdt, men lågare alpha)
+  scoreSorted.forEach(([k, v]) => {
+    const ms = new Date(k).getTime();
+    const x1 = toXms(ms), x2 = toXms(ms + 3600000);
+    ctx.fillStyle = `rgba(201,168,76,${(v.total / 100) * 0.10})`;
+    ctx.fillRect(x1, pad.t, x2 - x1, ch);
+  });
 
   // ── Horisontale gridlinjer + Y-akse
   [0, 0.33, 0.67, 1].forEach(frac => {
@@ -480,7 +496,12 @@ async function load() {
           <div class="legend-item"><div class="legend-dot" style="background:#4caf82"></div> Høyvann</div>
           <div class="legend-item"><div class="legend-dot" style="background:#e05252"></div> Lavvann</div>
           <div class="legend-item"><div class="legend-line"></div> Nå</div>
-          <div class="legend-item"><div class="legend-fill"></div> Godt fiske</div>
+          <div class="legend-item"><div style="display:flex;gap:2px;align-items:center">
+            <div style="width:10px;height:8px;background:#4caf82;border-radius:1px"></div>
+            <div style="width:10px;height:8px;background:#c9a84c;border-radius:1px"></div>
+            <div style="width:10px;height:8px;background:#4a9eca;border-radius:1px"></div>
+            <div style="width:10px;height:8px;background:#e05252;border-radius:1px"></div>
+          </div> Fiskekvalitet</div>
         </div>
       </div>
 
